@@ -23,6 +23,9 @@ public class Producto {
     @JoinColumn(name = "id_marca")
     private Marca marca;
 
+    @Version
+    private int version;
+
     public Producto(String codigo, String descripcion, double precio, Categoria categoria, Marca marca) {
 
         this.verificarProducto(codigo, descripcion, precio, categoria, marca);
@@ -67,9 +70,14 @@ public class Producto {
         this.categoria = categoria;
     }
 
-    public void modificarDatos(String descripcion, double precio, Categoria categoria) {
+    public void modificarDatos(String descripcion, double precio, Categoria categoria, Marca marca) {
         this.setDescripcion(descripcion);
         this.setPrecio(precio);
         this.setCategoria(categoria);
+        this.setMarca(marca);
+    }
+
+    public boolean sameVersion(int versionReadInPreviousTx) {
+        return this.version == versionReadInPreviousTx;
     }
 }

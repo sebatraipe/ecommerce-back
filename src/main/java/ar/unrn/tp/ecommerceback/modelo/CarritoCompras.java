@@ -42,7 +42,7 @@ public class CarritoCompras {
                 .sum();
     }
 
-    public Venta realizarVenta(TarjetaCredito tarjetaCredito) {
+    public Venta realizarVenta(TarjetaCredito tarjetaCredito, String numeroVenta) {
         if (!this.servicioValidadorTarjeta.validarTarjeta(tarjetaCredito)) {
             throw new RuntimeException("La tarjeta falló...");
         }
@@ -50,6 +50,6 @@ public class CarritoCompras {
         double descuentoTotal = this.descuentoTotal(tarjetaCredito);
         montoTotal -= descuentoTotal;
 
-        return new Venta(LocalDateTime.now(), this.cliente, this.productos, montoTotal);
+        return new Venta(LocalDateTime.now(), this.cliente, this.productos, montoTotal, numeroVenta);
     }
 }

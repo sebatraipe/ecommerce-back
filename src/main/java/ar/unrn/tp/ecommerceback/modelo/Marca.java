@@ -1,6 +1,7 @@
 package ar.unrn.tp.ecommerceback.modelo;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -8,6 +9,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "marcas", uniqueConstraints = @UniqueConstraint(columnNames = "nombre"))
 @NoArgsConstructor
 @Data
+@AllArgsConstructor
 public class Marca {
 
     @Id

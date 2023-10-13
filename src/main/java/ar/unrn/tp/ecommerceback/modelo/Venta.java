@@ -28,11 +28,23 @@ public class Venta {
     @Column(name = "monto_total")
     private double montoTotal;
 
+    @Column(name = "numero_venta")
+    private String numeroVenta;
+
     public Venta(LocalDateTime fechaHora, Cliente cliente, List<Producto> producto, double montoTotal) {
         this.fechaHora = fechaHora;
         this.cliente = cliente;
         this.productoVendidos = this.convertirProducto(producto);
         this.montoTotal = montoTotal;
+    }
+
+    public Venta(LocalDateTime fechaHora, Cliente cliente, List<Producto> producto, double montoTotal,
+                 String numeroVenta) {
+        this.fechaHora = fechaHora;
+        this.cliente = cliente;
+        this.productoVendidos = this.convertirProducto(producto);
+        this.montoTotal = montoTotal;
+        this.numeroVenta = numeroVenta;
     }
 
     private List<ProductoVendido> convertirProducto(List<Producto> producto) {

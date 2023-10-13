@@ -1,13 +1,11 @@
 package ar.unrn.tp.ecommerceback.servicios;
 
 import ar.unrn.tp.ecommerceback.api.ProductoService;
+import ar.unrn.tp.ecommerceback.exceptions.ConcurrencyException;
 import ar.unrn.tp.ecommerceback.modelo.Categoria;
 import ar.unrn.tp.ecommerceback.modelo.Marca;
 import ar.unrn.tp.ecommerceback.modelo.Producto;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.EntityTransaction;
-import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,20 +40,33 @@ public class ProductoServiceImpl implements ProductoService {
     }
 
     @Override
-    public void modificarProducto(Long idProducto, String descripcion, double precio, Long idCategoria) {
-        try {
-            Producto producto = entityManager.find(Producto.class, idProducto);
-            if (producto == null)
-                throw new RuntimeException("Producto no encontrado...");
-            Categoria categoria = entityManager.find(Categoria.class, idCategoria);
-            if (categoria == null)
-                throw new RuntimeException("Categoria no encontrada...");
+    @Transactional
+    public void modificarProducto(Long idProducto, String descripcion, double precio, Long idCategoria,
+                                  String marca, int version) {
 
-            producto.modificarDatos(descripcion, precio, categoria);
-            entityManager.clear();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        Producto producto = entityManager.find(Producto.class, idProducto);
+        if (!producto.sameVersion(version)) {
+            throw new ConcurrencyException("Error, actualice la página y vuelva a intentarlo.");
         }
+        Categoria categoria = entityManager.find(Categoria.class, idCategoria);
+        Marca marcaProducto = this.obtenerMarca(marca);
+        producto.modificarDatos(descripcion, precio, categoria, marcaProducto);
+    }
+
+    private Marca obtenerMarca(String marca) {
+        Marca marcaProducto = entityManager.createQuery(
+                        "select m from Marca m where m.nombre = :nombre", Marca.class)
+                .setParameter("nombre", marca)
+                .getResultList()
+                .stream()
+                .findFirst()
+                .orElse(null);
+        if (marcaProducto == null) {
+            System.out.println("Entra....");
+            marcaProducto = new Marca(null, marca);
+            entityManager.persist(marcaProducto);
+        }
+        return marcaProducto;
     }
 
     @Override
@@ -71,6 +82,20 @@ public class ProductoServiceImpl implements ProductoService {
             }
             this.entityManager.clear();
             return productos;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public Producto getProduct(Long id) {
+        try {
+            Producto producto = entityManager.find(Producto.class, id);
+            if (producto == null) {
+                //Ver Optional
+                throw new RuntimeException("No existe el producto...");
+            }
+            return producto;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

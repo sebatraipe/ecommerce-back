@@ -4,12 +4,11 @@ import ar.unrn.tp.ecommerceback.api.VentaService;
 import ar.unrn.tp.ecommerceback.exceptions.NotEmptyException;
 import ar.unrn.tp.ecommerceback.modelo.*;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Year;
 import java.util.List;
 
 @Service
@@ -34,7 +33,6 @@ public class VentaServiceImpl implements VentaService {
 
             TarjetaCredito tarjetaCredito = entityManager.find(TarjetaCredito.class, idTarjeta);
 
-
             Cliente cliente = entityManager.find(Cliente.class, idCliente);
 
             List<Producto> productosListado = entityManager.createQuery(
@@ -46,15 +44,48 @@ public class VentaServiceImpl implements VentaService {
                 throw new NotEmptyException("No se encontraron productos.");
             }
 
+            NumeroSiguiente numeroSiguiente = this.obtenerNumeroSiguiente();
+
+            //Genero el numero de venta unico N-AÑO
+            String numeroVenta = numeroSiguiente.generarNumeroVenta();
+
             CarritoCompras carritoCompras = new CarritoCompras(cliente, productosListado, descuentos,
                     this.servicioValidadorTarjeta);
-            Venta venta = carritoCompras.realizarVenta(tarjetaCredito);
+            Venta venta = carritoCompras.realizarVenta(tarjetaCredito, numeroVenta);
             entityManager.persist(venta);
-
-            entityManager.clear();
+            this.incrementarNumeroActualEnLaBD(Year.now().getValue(), numeroSiguiente.recuperarSiguiente());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private void incrementarNumeroActualEnLaBD(int anio, int numeroSiguiente) {
+        var query =  entityManager.createQuery(
+                        "update NumeroSiguiente ns set ns.actual = :numeroSiguiente where ns.anio = :anio")
+                .setParameter("numeroSiguiente", numeroSiguiente)
+                .setParameter("anio", anio);
+
+        int actualizacion = query.executeUpdate();
+        if (actualizacion == 0) {
+            throw new RuntimeException("No se pudo actualizar el valor actual del número de la venta...");
+        }
+    }
+
+    private NumeroSiguiente obtenerNumeroSiguiente() {
+        int anio = Year.now().getValue();
+        NumeroSiguiente numeroSiguiente = entityManager.createQuery(
+                        "select ns from NumeroSiguiente ns where ns.anio = :anio", NumeroSiguiente.class)
+                .setParameter("anio", anio)
+                .getResultList()
+                .stream()
+                .findFirst()
+                .orElse(null);
+
+        if (numeroSiguiente == null) {
+            numeroSiguiente = new NumeroSiguiente(Year.now().getValue(), 0);
+            entityManager.persist(numeroSiguiente);
+        }
+        return numeroSiguiente;
     }
 
     @Override
