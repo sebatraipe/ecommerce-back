@@ -44,4 +44,10 @@ public class VentasController {
                                   @RequestParam Long clienteId) {
         return this.ventaService.calcularMonto(productoIds, idCard, clienteId);
     }
+
+    @GetMapping("ventas-recientes/{idCliente}")
+    public ResponseEntity<?> findAllRecent(@PathVariable Long idCliente) {
+        return ResponseEntity.status(HttpStatus.OK).body(this.ventaService.ventasRecientes(idCliente));
+    }
+
 }
